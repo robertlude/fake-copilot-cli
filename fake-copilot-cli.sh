@@ -23,15 +23,12 @@ RESPONSE=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
         "model": "gpt-4-0125-preview",
         "messages": [{
             "role": "system",
-            "content": "Suggest a terminal command for the following task. Do not explain the command. Only return the command itself. Do not enclose the command in markdown format."
+            "content": "Suggest a terminal command for the following task. Do not explain the command. Only return the command itself. Do not use markdown in your response."
         }, {
             "role": "user",
             "content": "'"$QUERY"'"
         }]
     }')
-
-# Log the full response for debugging
-echo "API Response: $RESPONSE"
 
 # Extract the command from the response
 COMMAND=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' 2>/dev/null)
@@ -44,17 +41,33 @@ fi
 
 # Present the command to the user
 echo "Suggested command: $COMMAND"
-read -p "Do you want to run this command? (yes/no/correct) " RESPONSE
 
-case "$RESPONSE" in
-    yes)
-        eval "$COMMAND"
-        ;;
-    correct)
-        read -p "Enter the correct command: " CORRECTED_COMMAND
-        eval "$CORRECTED_COMMAND"
-        ;;
-    *)
-        echo "Command not executed."
-        ;;
-esac
+# Improved user menu
+while true; do
+    read -p "Do you want to run this command? (yes/no/correct/exit) " RESPONSE
+
+    case "$RESPONSE" in
+        yes)
+            echo "Executing: $COMMAND"
+            eval "$COMMAND"
+            break
+            ;;
+        correct)
+            read -p "Enter the correct command: " CORRECTED_COMMAND
+            echo "Executing: $CORRECTED_COMMAND"
+            eval "$CORRECTED_COMMAND"
+            break
+            ;;
+        no)
+            echo "Command not executed."
+            break
+            ;;
+        exit)
+            echo "Exiting..."
+            break
+            ;;
+        *)
+            echo "Invalid option. Please enter yes, no, correct, or exit."
+            ;;
+    esac
+done
